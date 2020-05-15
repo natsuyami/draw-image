@@ -5,7 +5,8 @@ using System.Linq;
 namespace draw_image
 {
     class Program
-    {
+        {
+        // base color used for creating complex colors, value of base colors are in hex decimal 64-bit
         static int[] cColors = { 0x000000, 0x000080, 0x008000, 0x008080, 0x800000, 0x800080, 0x808000, 0xC0C0C0, 0x808080, 0x0000FF, 0x00FF00, 0x00FFFF, 0xFF0000, 0xFF00FF, 0xFFFF00, 0xFFFFFF };
 
         static void Main(string[] args)
@@ -13,62 +14,80 @@ namespace draw_image
             Console.WriteLine("Hello World!");
 
             Bitmap image1 = new Bitmap(@"images\shinomiya.jpg", true);
-            ConsoleWriteImage(image1);
+            ConsoleWriteImage(image1); // execute drawing of image
             Console.ReadLine();
         }
 
+        // create pixel with specific color using the base colors
+        // it will try to get the nearest equal color from the base color as describe in the given image
+        // used the concept of Color distance RGB as base algorithm
         public static void ConsoleWritePixel(Color cValue)
         {
             Color[] cTable = cColors.Select(x => Color.FromArgb(x)).ToArray();
             char[] rList = new char[] { (char)9617, (char)9618, (char)9619, (char)9608 }; // 1/4, 2/4, 3/4, 4/4
             int[] bestHit = new int[] { 0, 0, 4, int.MaxValue }; //ForeColor, BackColor, Symbol, Score
-
-            for (int rChar = rList.Length; rChar > 0; rChar--)
-            {
-                for (int cFore = 0; cFore < cTable.Length; cFore++)
+            try {
+                for (int rChar = rList.Length; rChar > 0; rChar--)
                 {
-                    for (int cBack = 0; cBack < cTable.Length; cBack++)
+                    for (int cFore = 0; cFore < cTable.Length; cFore++)
                     {
-                        int R = (cTable[cFore].R * rChar + cTable[cBack].R * (rList.Length - rChar)) / rList.Length;
-                        int G = (cTable[cFore].G * rChar + cTable[cBack].G * (rList.Length - rChar)) / rList.Length;
-                        int B = (cTable[cFore].B * rChar + cTable[cBack].B * (rList.Length - rChar)) / rList.Length;
-                        int iScore = (cValue.R - R) * (cValue.R - R) + (cValue.G - G) * (cValue.G - G) + (cValue.B - B) * (cValue.B - B);
-                        if (!(rChar > 1 && rChar < 4 && iScore > 50000)) // rule out too weird combinations
+                        for (int cBack = 0; cBack < cTable.Length; cBack++)
                         {
-                            if (iScore < bestHit[3])
+                            int R = (cTable[cFore].R * rChar + cTable[cBack].R * (rList.Length - rChar)) / rList.Length;
+                            int G = (cTable[cFore].G * rChar + cTable[cBack].G * (rList.Length - rChar)) / rList.Length;
+                            int B = (cTable[cFore].B * rChar + cTable[cBack].B * (rList.Length - rChar)) / rList.Length;
+                            int iScore = (cValue.R - R) * (cValue.R - R) + (cValue.G - G) * (cValue.G - G) + (cValue.B - B) * (cValue.B - B);
+                            if (!(rChar > 1 && rChar < 4 && iScore > 50000)) // rule out too weird combinations
                             {
-                                bestHit[3] = iScore; //Score
-                                bestHit[0] = cFore;  //ForeColor
-                                bestHit[1] = cBack;  //BackColor
-                                bestHit[2] = rChar;  //Symbol
+                                if (iScore < bestHit[3])
+                                {
+                                    bestHit[3] = iScore; //Score
+                                    bestHit[0] = cFore;  //ForeColor
+                                    bestHit[1] = cBack;  //BackColor
+                                    bestHit[2] = rChar;  //Symbol
+                                }
                             }
                         }
                     }
                 }
+                Console.ForegroundColor = (ConsoleColor)bestHit[0];
+                Console.BackgroundColor = (ConsoleColor)bestHit[1];
+                Console.Write(rList[bestHit[2] - 1]);
+
+            } catch (Exception e) {
+                Console.Write("x");
+                Console.WriteLine("Error In Pixel Creation: " + e.Message);
             }
-            Console.ForegroundColor = (ConsoleColor)bestHit[0];
-            Console.BackgroundColor = (ConsoleColor)bestHit[1];
-            Console.Write(rList[bestHit[2] - 1]);
+            
         }
 
+        // will write the image in the console
+        // size of the image will be reduce to fit in the cmd (reduction by ratio)
         public static void ConsoleWriteImage(Bitmap source)
         {
             int sMax = 39;
             decimal percent = Math.Min(decimal.Divide(sMax, source.Width), decimal.Divide(sMax, source.Height));
             Size dSize = new Size((int)(source.Width * percent), (int)(source.Height * percent));   
             Bitmap bmpMax = new Bitmap(source, dSize.Width * 2, dSize.Height);
-            for (int i = 0; i < dSize.Height; i++)
-            {
-                for (int j = 0; j < dSize.Width; j++)
+            try {
+                for (int i = 0; i < dSize.Height; i++)
                 {
-                    ConsoleWritePixel(bmpMax.GetPixel(j * 2, i));
-                    ConsoleWritePixel(bmpMax.GetPixel(j * 2 + 1, i));
+                    for (int j = 0; j < dSize.Width; j++)
+                    {
+                        ConsoleWritePixel(bmpMax.GetPixel(j * 2, i));
+                        ConsoleWritePixel(bmpMax.GetPixel(j * 2 + 1, i));
+                    }
+                    System.Console.WriteLine();
                 }
-                System.Console.WriteLine();
+                Console.ResetColor();
+            } catch (Exception e) {
+                Console.Write("x");
+                Console.WriteLine("Error In Writing Image: " + e.Message);
             }
-            Console.ResetColor();
+            
         }
 
+        // algorithm trial two for color distance (failure)
         public static int ToConsoleColor(System.Drawing.Color c)
         {
             int index = (c.R > 128 | c.G > 128 | c.B > 128) ? 8 : 0;
@@ -78,6 +97,7 @@ namespace draw_image
             return index;
         }
 
+        // algorithm trial two for writing the image (failure)
         public static void ConsoleWriteImageTwo(Bitmap src)
         {
             int min = 39;
@@ -95,6 +115,8 @@ namespace draw_image
             }
         }
 
+        // algorithm trial three for writing the image (failure)
+        // also merge it with the algorithm for color distance
         public static void ConsoleWriteImageThree(Bitmap bmpSrc)
         {
             int sMax = 39;
