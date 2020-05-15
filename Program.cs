@@ -12,14 +12,15 @@ namespace draw_image
         {
             Console.WriteLine("Hello World!");
 
-            Bitmap image1 = new Bitmap(@"C:\Users\R-Bunquin\Pictures\Wallpaper\100652l.jpg", true);
+            Bitmap image1 = new Bitmap(@"images\shinomiya.jpg", true);
             ConsoleWriteImage(image1);
+            Console.ReadLine();
         }
 
         public static void ConsoleWritePixel(Color cValue)
         {
             Color[] cTable = cColors.Select(x => Color.FromArgb(x)).ToArray();
-            char[] rList = new char[] { (char)10617, (char)10618, (char)10619, (char)10608 }; // 1/4, 2/4, 3/4, 4/4
+            char[] rList = new char[] { (char)9617, (char)9618, (char)9619, (char)9608 }; // 1/4, 2/4, 3/4, 4/4
             int[] bestHit = new int[] { 0, 0, 4, int.MaxValue }; //ForeColor, BackColor, Symbol, Score
 
             for (int rChar = rList.Length; rChar > 0; rChar--)
@@ -32,7 +33,7 @@ namespace draw_image
                         int G = (cTable[cFore].G * rChar + cTable[cBack].G * (rList.Length - rChar)) / rList.Length;
                         int B = (cTable[cFore].B * rChar + cTable[cBack].B * (rList.Length - rChar)) / rList.Length;
                         int iScore = (cValue.R - R) * (cValue.R - R) + (cValue.G - G) * (cValue.G - G) + (cValue.B - B) * (cValue.B - B);
-                        if (!(rChar > 3 && rChar < 8 && iScore > 100000)) // rule out too weird combinations
+                        if (!(rChar > 1 && rChar < 4 && iScore > 50000)) // rule out too weird combinations
                         {
                             if (iScore < bestHit[3])
                             {
